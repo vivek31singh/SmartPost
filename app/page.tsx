@@ -6,8 +6,8 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="font-[family-name:var(--font-geist-sans)]">
-      <HeroHighlight className="h-screen flex flex-col gap-8 justify-center items-center">
+    <div className=" font-[family-name:var(--font-geist-sans)]">
+      <HeroHighlight className="h-[calc(100vh-64px)] flex flex-col gap-8 justify-center items-center">
         <motion.h1
           initial={{
             opacity: 0,
