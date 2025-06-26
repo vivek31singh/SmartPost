@@ -59,7 +59,7 @@ const JobPage = () => {
   };
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900 p-8 md:p-16">
+    <main className="min-h-[calc(100vh-64px)] overflow-hidden bg-gray-50 dark:bg-gray-900 p-8 md:p-16">
       <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 md:flex gap-10">
         {/* Main Content */}
         <section className="flex-1">
@@ -77,7 +77,7 @@ const JobPage = () => {
 
           <div className="text-gray-800 dark:text-gray-200 space-y-6 leading-relaxed">
             <p>
-              <strong>Job Type:</strong> {job?.job_type.replace("_", " ")}
+              <strong>Job Type:</strong> {job?.job_type?.replace("_", " ")}
             </p>
             <p>
               <strong>Experience Required:</strong> {job?.experience}+ years
@@ -106,7 +106,7 @@ const JobPage = () => {
                 <strong>Location:</strong> {job?.location}
               </li>
               <li>
-                <strong>Job Type:</strong> {job?.job_type.replace("_", " ")}
+                <strong>Job Type:</strong> {job?.job_type?.replace("_", " ")}
               </li>
               <li>
                 <strong>Experience:</strong> {job?.experience}+ years

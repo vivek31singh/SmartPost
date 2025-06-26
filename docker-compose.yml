@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - /app/node_modules  # Prevent host node_modules from overwriting container's
+      - ./prisma/dev.db:/app/prisma/dev.db  # Persist SQLite DB file
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    command: sh -c "npx prisma migrate deploy && npm run start"

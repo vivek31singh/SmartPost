@@ -56,33 +56,57 @@ export const POST = async (req: Request) => {
       }
     );
   } catch (error) {
-    if(error instanceof Error){
-      return new Response(JSON.stringify({ error: "Invalid JSON or request", message: error.message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (error instanceof Error) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid JSON or request",
+          message: error.message,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
   }
 };
 
 export const GET = async (req: Request) => {
-  const { searchParams } = new URL(req.url);
-  const query = searchParams.get("query") || "";
+  try {
+    const { searchParams } = new URL(req.url);
+    const query = searchParams.get("query") || "";
 
-  const jobs = await prisma.job.findFirst({
-    where: {
-      OR: [
-        { id: { contains: query } },
-        { title: { contains: query } },
-        { description: { contains: query } },
-      ],
-    },
-  });
+    const whereClause = query
+      ? {
+          OR: [
+            { id: query },
+            { title: { contains: query } },
+            { description: { contains: query } },
+          ],
+        }
+      : {};
 
-  return new Response(JSON.stringify(jobs), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+    const jobs = await prisma.job.findFirst({
+      where: whereClause,
+    });
+
+    return new Response(JSON.stringify(jobs), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("GET /api error:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Invalid request",
+        message: error instanceof Error ? error.message : String(error),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 };
 
 export const PATCH = async (req: Request) => {

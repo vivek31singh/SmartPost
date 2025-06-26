@@ -28,11 +28,16 @@ const reducer = (
     case "UPDATE_JOB_TYPE":
       return { ...state, job_type: action.payload };
     case "UPDATE_EXPERIENCE":
-      return { ...state, experience: action.payload };
+      return {
+        ...state,
+        experience: action.payload.replace(/[a-zA-Z]/g, ""),
+      };
     case "UPDATE_SALARY":
-      return { ...state, salary: action.payload };
+      return { ...state, salary: action.payload.replace(/[a-zA-Z]/g, "") };
     case "UPDATE_JOB_DESCRIPTION":
       return { ...state, description: action.payload };
+    case "RESET":
+      return { ...initialState };
     default:
       throw new Error();
   }
@@ -40,6 +45,7 @@ const reducer = (
 
 const AddJobPage = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [submitting, setSubmitting] = React.useState(false);
 
   type InputType = React.ChangeEvent<
     HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -56,10 +62,12 @@ const AddJobPage = () => {
     e.preventDefault();
     const isEmpty = Object.entries(state).some(([, value]) => !value);
 
-    // TODO: add alert, if any field is empty
     if (isEmpty) {
-      return alert("Please fill all the fields");
+      alert("Please fill all the fields");
+      return;
     }
+
+    setSubmitting(true);
 
     try {
       const res = await fetch("/api/job", {
@@ -71,12 +79,20 @@ const AddJobPage = () => {
       });
 
       const data = await res.json();
-      console.log("data", data);
+      if (data.message === "Job created successfully") {
+        dispatch({
+          type: "RESET",
+          payload: "",
+        });
+      }
     } catch (err) {
       if (err instanceof Error) {
-        throw new Error(err.message);
+        console.error(err.message);
+      } else {
+        console.error(err);
       }
-      console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -204,12 +220,15 @@ const AddJobPage = () => {
             </label>
             <div className="mt-1 sm:mt-0 sm:col-span-2">
               <input
-                type="text"
+                type="number"
                 id="experience"
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="e.g. 3+ years"
                 value={state.experience}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                title="Only numbers are allowed"
               />
             </div>
           </div>
@@ -224,12 +243,15 @@ const AddJobPage = () => {
             </label>
             <div className="mt-1 sm:mt-0 sm:col-span-2">
               <input
-                type="text"
+                type="number"
                 id="salary"
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="e.g. $100,000"
                 value={state.salary}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                title="Only numbers are allowed"
               />
             </div>
           </div>
@@ -258,7 +280,12 @@ const AddJobPage = () => {
         <div className="col-span-2 w-full flex items-center justify-center">
           <button
             type="submit"
-            className="cursor-pointer flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            disabled={submitting}
+            className={
+              submitting
+                ? "cursor-not-allowed flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600"
+                : "cursor-pointer flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            }
           >
             Post Job
           </button>

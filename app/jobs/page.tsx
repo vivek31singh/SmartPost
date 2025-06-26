@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prismaClient";
 import Link from "next/link";
 import React from "react";
 
+export const dynamic = "force-dynamic";
+
 const JobsPage = async () => {
+
   const jobs = await prisma.job.findMany({
     select: {
       id: true,
@@ -17,9 +20,13 @@ const JobsPage = async () => {
   });
 
   return (
-    <main className="min-h-screen w-full p-10 bg-gray-50 dark:bg-gray-900">
+    <main className="min-h-[calc(100vh-64px)] w-full p-10 bg-gray-50 dark:bg-gray-900">
       <h1 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white max-w-4xl mx-auto mb-12">
-        All Job Openings
+        {jobs.length > 0 ? (
+          "Explore Our Current Job Openings"
+        ) : (
+          "We don't currently have any job openings. Please consider creating one."
+        )}
       </h1>
 
       <div className="max-w-7xl mx-auto grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
