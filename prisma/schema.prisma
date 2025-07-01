@@ -22,13 +22,14 @@ enum JobStatus {
 
 model Job {
   id          String   @id @default(cuid())
-  title       String
-  company     String
-  location    String
-  job_type    String
-  experience  String
-  salary      String
-  description String
-  status      JobStatus @default(Active)
+  url         String   @unique
+  title       String?
+  category    String?
+  type        String?
+  location    String?
+  salary      String?
+  descriptionHTML String?
+  descriptionText String?
+  status      JobStatus? @default(Active)
   createdAt   DateTime @default(now())
 }

@@ -2,18 +2,21 @@
 
 import { JobStatus } from "@prisma/client";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import parse from "html-react-parser";
+import DOMPurify from "dompurify";
 
 interface Job {
   id: string;
-  title: string;
-  company: string;
-  location: string;
-  job_type: string;
-  experience: string;
-  salary: string;
-  description: string;
+  title?: string;
+  category?: string;
+  location?: string;
+  type?: string;
+  salary?: string;
+  descriptionHTML?: string;
+  descriptionText?: string;
   status: string;
+  url: string;
 }
 
 const JobPage = () => {
@@ -49,14 +52,17 @@ const JobPage = () => {
       },
       body: JSON.stringify({
         id: job.id,
-        key: "status",
-        value: status,
+        data: {
+          status: status,
+        },
       }),
     });
 
     const updatedJob = await res.json();
     setJob(updatedJob);
   };
+
+  const sanitizedJobDescHTML = DOMPurify.sanitize(job?.descriptionHTML || "");
 
   return (
     <main className="min-h-[calc(100vh-64px)] overflow-hidden bg-gray-50 dark:bg-gray-900 p-8 md:p-16">
@@ -67,53 +73,84 @@ const JobPage = () => {
             {job?.title}
           </h1>
 
-          <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300 mb-8">
-            <span className="text-lg font-semibold capitalize">
-              {job?.company}
-            </span>
-            <span className="text-sm">•</span>
-            <span className="text-lg capitalize">{job?.location}</span>
-          </div>
+          {job?.category && (
+            <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300 mb-8">
+              <span className="text-lg font-semibold capitalize">
+                Category: {job?.category}
+              </span>
+            </div>
+          )}
+          {job?.location && (
+            <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300 mb-8">
+              <span className="text-lg font-semibold capitalize">
+                Location: {job?.location}
+              </span>
+            </div>
+          )}
 
           <div className="text-gray-800 dark:text-gray-200 space-y-6 leading-relaxed">
-            <p>
-              <strong>Job Type:</strong> {job?.job_type?.replace("_", " ")}
-            </p>
-            <p>
-              <strong>Experience Required:</strong> {job?.experience}+ years
-            </p>
-            <p>
-              <strong>Salary:</strong> {job?.salary}
-            </p>
-            <p>
-              <strong>Description:</strong>
-            </p>
-            <p>{job?.description}</p>
+            {job?.type && (
+              <p>
+                <strong>Job Type:</strong> {job?.type?.replace("_", " ")}
+              </p>
+            )}
+
+            {job?.salary && (
+              <p>
+                <strong>Salary:</strong> {job?.salary}
+              </p>
+            )}
+            {job?.url && (
+              <p>
+                <strong>Job Url:</strong> {job?.url}
+              </p>
+            )}
+            {job?.descriptionHTML && (
+              <div className=".awsm-job-container">
+                {parse(sanitizedJobDescHTML || "")}
+              </div>
+            )}
+            {job?.descriptionText && (
+              <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
+                {job?.descriptionText}
+              </pre>
+            )}
           </div>
         </section>
 
         {/* Sidebar */}
-        <aside className="w-full max-w-xs mt-10 md:mt-0 border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-900 flex flex-col gap-6">
+        <aside className="w-full h-fit max-w-xs mt-10 md:mt-0 border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-900 flex flex-col gap-6">
           <div>
             <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">
               Job Details
             </h2>
             <ul className="text-gray-700 dark:text-gray-300 space-y-2">
-              <li>
-                <strong>Company:</strong> {job?.company}
-              </li>
-              <li>
-                <strong>Location:</strong> {job?.location}
-              </li>
-              <li>
-                <strong>Job Type:</strong> {job?.job_type?.replace("_", " ")}
-              </li>
-              <li>
-                <strong>Experience:</strong> {job?.experience}+ years
-              </li>
-              <li>
-                <strong>Salary:</strong> {job?.salary}
-              </li>
+              {job?.category && (
+                <li>
+                  <strong>Category: </strong> {job?.category}
+                </li>
+              )}
+              {job?.location && (
+                <li>
+                  <strong>Location:</strong> {job?.location}
+                </li>
+              )}
+              {job?.type && (
+                <li>
+                  <strong>Job Type:</strong> {job?.type?.replace("_", " ")}
+                </li>
+              )}
+
+              {job?.salary && (
+                <li>
+                  <strong>Salary:</strong> {job?.salary}
+                </li>
+              )}
+              {job?.url && (
+                <li className="break-all">
+                  <strong>Job Url:</strong> {job?.url}
+                </li>
+              )}
             </ul>
           </div>
 

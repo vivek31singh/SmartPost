@@ -1,60 +1,52 @@
 // app/api/your-endpoint/route.ts
 
+import { sendJobToQueue } from "@/lib/helper/sendJobToQueue";
 import { prisma } from "@/lib/prismaClient";
-import { JobStatus } from "@prisma/client";
+import { JobStatus, Prisma } from "@prisma/client";
 
 export const POST = async (req: Request) => {
   try {
     const body = await req.json();
 
-    const {
-      title,
-      company,
-      location,
-      job_type,
-      experience,
-      salary,
-      description,
-    } = body;
+    const { url } = body;
+    if (!url) {
+      return new Response(JSON.stringify({ error: "Please enter a job URL" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-    if (
-      !title ||
-      !company ||
-      !location ||
-      !job_type ||
-      !experience ||
-      !salary ||
-      !description
-    ) {
-      return new Response(
-        JSON.stringify({ error: "Please fill all the fields" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+    const existingJob = await prisma.job.findFirst({
+      where: { url: "https://www.doddlehq.com/" },
+    });
+
+    if (existingJob) {
+      return new Response(JSON.stringify({ error: "Job already exists" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const newJob = await prisma.job.create({
       data: {
-        title,
-        company,
-        location,
-        job_type,
-        experience,
-        salary,
-        description,
+        url,
         status: JobStatus.Active,
       },
     });
 
-    return new Response(
-      JSON.stringify({ message: "Job created successfully", job: newJob }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    if (newJob) {
+      sendJobToQueue(newJob).catch((error) => {
+        console.error("Failed to send job to queue:", error);
+      });
+
+      return new Response(
+        JSON.stringify({ message: "Job created successfully" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
   } catch (error) {
     if (error instanceof Error) {
       return new Response(
@@ -76,15 +68,21 @@ export const GET = async (req: Request) => {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
 
-    const whereClause = query
-      ? {
-          OR: [
-            { id: query },
-            { title: { contains: query } },
-            { description: { contains: query } },
-          ],
-        }
-      : {};
+    const whereClause: Prisma.JobWhereInput = {};
+    if (query) {
+      Object.assign(whereClause, {
+        OR: [
+          { id: query },
+          { salary: query },
+          { title: { contains: query } },
+          { category: { contains: query } },
+          { type: { contains: query } },
+          { location: { contains: query } },
+          { descriptionHTML: { contains: query } },
+          { descriptionText: { contains: query } },
+        ],
+      });
+    }
 
     const jobs = await prisma.job.findFirst({
       where: whereClause,
@@ -111,18 +109,51 @@ export const GET = async (req: Request) => {
 
 export const PATCH = async (req: Request) => {
   const body = await req.json();
-  const { id, key, value } = body;
-  console.log(body);
-  const updatedJob = await prisma.job.update({
-    where: {
-      id: id,
-    },
-    data: {
-      [key]: value,
-    },
-  });
-  return new Response(JSON.stringify(updatedJob), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+
+  const { id, data } = body;
+
+  const allowedFields = [
+    "url",
+    "title",
+    "category",
+    "type",
+    "location",
+    "salary",
+    "descriptionHTML",
+    "descriptionText",
+    "status",
+  ];
+
+  if (!id || typeof data !== "object") {
+    return new Response(JSON.stringify({ error: "Invalid request body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Filter out invalid keys
+  const sanitizedData: Record<string, any> = {};
+  for (const key of Object.keys(data)) {
+    if (allowedFields.includes(key)) {
+      sanitizedData[key] = (data[key] as string).toLowerCase();
+    }
+  }
+
+  try {
+    const updatedJob = await prisma.job.update({
+      where: { id },
+      data: sanitizedData,
+    });
+
+    return new Response(JSON.stringify(updatedJob), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Update failed:", error);
+    return new Response(JSON.stringify({ error: "Failed to update job" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 };
