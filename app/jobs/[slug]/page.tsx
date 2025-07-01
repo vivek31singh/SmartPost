@@ -2,7 +2,7 @@
 
 import { JobStatus } from "@prisma/client";
 import { useParams } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import parse from "html-react-parser";
 import DOMPurify from "dompurify";
 

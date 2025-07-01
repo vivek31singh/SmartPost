@@ -132,7 +132,7 @@ export const PATCH = async (req: Request) => {
   }
 
   // Filter out invalid keys
-  const sanitizedData: Record<string, any> = {};
+  const sanitizedData: Record<string, string> = {};
   for (const key of Object.keys(data)) {
     if (allowedFields.includes(key)) {
       sanitizedData[key] = (data[key] as string).toLowerCase();

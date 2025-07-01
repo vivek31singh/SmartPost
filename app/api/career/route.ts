@@ -14,7 +14,7 @@ export const GET = async (req: Request) => {
       });
     }
 
-    const whereClause: Record<string, any> = {};
+    const whereClause: Record<string, { contains: string } | JobStatus> = {};
 
     whereClause[key] = {
       contains: value,
